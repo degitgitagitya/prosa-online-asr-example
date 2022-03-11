@@ -17,10 +17,9 @@ const canvasCtx = canvas.getContext('2d')
 
 let socket = null
 
-const token =
-  'eyJhbGciOiJSUzI1NiIsImtpZCI6Ik5XSTBNemRsTXprdE5tSmtNaTAwTTJZMkxXSTNaamN0T1dVMU5URmxObVF4Wm1KaSIsInR5cCI6IkpXVCJ9.eyJhcHBsaWNhdGlvbl9pZCI6NDQ2NzIsImxpY2Vuc2Vfa2V5IjoiYjY1NjU3ZjgtMWU3Zi00NmEwLTljNzMtNDk1NGVjZDVhOGRiIiwidW5pcXVlX2tleSI6Ijg3OGM4YWY3LTQ4ZjItNDlmZC1iZjMzLTk5YmRkNzVmNjUwNSIsInByb2R1Y3RfaWQiOjUsImF1ZCI6ImFwaS1zZXJ2aWNlIiwic3ViIjoiY2VmMmRlM2MtOGU5YS00NTc5LTljNGItZWJlNThiMWVkOTRmIiwiZXhwIjoxNjc4NTIzNzUxLCJpc3MiOiJjb25zb2xlIiwiaWF0IjoxNjQ2OTg3NzUxfQ.LIvplVuKrkZNWKIulpGACd8HTJeyOzunP2JteM-4YI5NMjj99A8ooPPWk4QbK2E9exx9CEVffonr_c3okKcubG5LS05qlOkQ--lBg1DrZS8BQGw7ygj0uSj29RuaNUBO9A9Rw1rvVFUT2R243HyrwBbIQwCHrt6iovTVJ8KpFo97lqBwm8xa4HkGmeKudWMAHZ88h4WDb8JabGLfpF5vAw1BlKv-9vXtARX4iYFYJGmk_orqErKKlnPfXOuRwmecHjJcFcDjxueDsSP4URxyUoJNLc_6KfcM_zfW7ThgLr7Ny9I6KIkQ23w8xXAdmzcKZeGH4N118r3NSxY0JMT7LQ'
+const url = 'wss://s-api.prosa.ai/v2/speech/stt'
 
-//main block for doing the audio recording
+const token = ''
 
 if (navigator.mediaDevices.getUserMedia) {
   const constraints = { audio: true }
@@ -32,10 +31,10 @@ if (navigator.mediaDevices.getUserMedia) {
     visualize(stream)
 
     record.onclick = function () {
-      socket = new WebSocket('wss://s-api.prosa.ai/v2/speech/stt')
+      socket = new WebSocket(url)
 
       socket.addEventListener('message', (event) => {
-        console.log(event)
+        console.log(event) // process transcript here
       })
 
       socket.addEventListener('close', (event) => {
@@ -53,11 +52,6 @@ if (navigator.mediaDevices.getUserMedia) {
           JSON.stringify({
             label: null,
             model: 'stt-general-online',
-            audio: {
-              format: 'wav',
-              channels: 1,
-              sample_rate: 16000,
-            },
             include_filler: false,
             include_partial: true,
           })
@@ -85,13 +79,18 @@ if (navigator.mediaDevices.getUserMedia) {
       record.disabled = true
     }
 
-    stop.onclick = function () {
+    stop.onclick = async function () {
       mediaRecorder.stop()
       console.log(mediaRecorder.state)
       console.log('recorder stopped')
       record.style.background = ''
       record.style.color = ''
       // mediaRecorder.requestData();
+
+      // dummy empty byte to stop sending data
+      const blob = new Blob([], { type: 'audio/webm' })
+      const buffer = await blob.arrayBuffer()
+      socket.send(buffer)
 
       stop.disabled = true
       record.disabled = false
